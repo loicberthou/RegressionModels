@@ -1,0 +1,86 @@
+---
+title: "Regression Models - Project"
+author: "Loïc BERTHOU"
+date: "August 21, 2015"
+output: pdf_document
+---
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+set.seed(20150821)
+library(ggplot2)
+```
+
+# Executive Summary
+
+In this document, we will explore the question "Is an automatic or manual transmission better for MPG" by analysing the data provided in the **mtcars** dataset from R. To do so we have performed some basic exploratory analysis that will help us direct our more detailed data analysis. It will be demonstrated that the manual transmission is better for MPG in general but that other factors have a great influence on MPG.
+
+# Exploratory Analysis
+
+In the exploration of this dataset, we first notice that all columns are coded as numbers, despite the fact that some parameters clearly represent factors (**am** and **vs**). We could argue that some other parameters could be considered as factors (**cyl**, **gear**, **carb**). We will keep this in mind while performing our analysis and force some conversions if needed.
+
+This dataset being quite small, it is possible to view it entirely and we won't need the _summary_ or _str_ function to have an overview. It could be interesting to plot some relationships right away but to do an unbiased analysis, we will first look at the correlation matrix (Appendix 1).
+
+It appears clearly that some of the parameters are strongly correlated. We will then try to find the most influential parameters, leaving the correlated ones out of the model.
+
+For a first idea of the influence of weight on the mileage, we will draw a first plot that takes into account the type of transmission (Appendix 2).
+
+# Model Selection
+
+To find a model that fits our data, we will first perform the linear regression taking into account all the parameters provided in our dataset. By looking at the coefficients, we should confirm the first intuitions on our strongest influential parameters (Appendix 3).
+
+We already know that weight (**wt**) is one of the most influential parameter on the mileage. Since the displacement (**disp**) and the number of cylinders (**cyl**) and the gross horsepower (**hp**) are strongly correlated to weight, I will leave them out of the model.
+
+By removing the weakest parameters successively, and with the analysis of the variance between the various models (Appendix 4) we ended up with the model _fitSimpleQsec_ that was reasonably simple and yet quite accurate.
+
+The residual plots indicate a good fit (Appendix 5).
+
+# Conclusion
+
+We can certainly say that the choice of the transmission has an impact on the mileage. Our model shows that for all other parameters being equal, the manual transmission has 14 MPG more than the automatic. However, we also showed that the weight of the car and its performance can have a significant impact on the mileage.
+
+It is also important to note that the number of cars used for this analysis is yet limited and this should be investigated further with a more important number of cars for more significant results. We could also add other parameters that might influence the mileage (gasoline/diesel, car make, sedan/wagon, etc).
+
+$\pagebreak$
+
+# Appendix
+
+## Appendix 1. Correlation matrix
+
+```{r, fig.width=10}
+library(corrplot)
+corMtcars <- cor(mtcars)
+round(corMtcars, digits=2)
+corrplot(corMtcars)
+```
+
+## Appendix 2. Relationship between wt, wt and am
+```{r, fig.width=10}
+g <- ggplot(mtcars, aes(x=wt, y=mpg, color=factor(am)))
+g <- g + geom_point(size=4)
+g <- g + geom_smooth(method="lm")
+g
+```
+
+## Appendix 3. Linear Regression including all parameters
+
+```{r}
+fitAll <- lm(mpg ~ ., data=mtcars)
+summary(fitAll)$coef
+```
+
+## Appendix 4. Model selection with analysis of variance
+
+```{r}
+fitSimple <- lm(mpg ~ wt * factor(am), data=mtcars)
+fitSimpleQsec <- lm(mpg ~ wt * factor(am) + qsec, data=mtcars)
+fitComplex <- lm(mpg ~ wt * factor(am) + qsec + factor(vs) + gear + carb + drat, data=mtcars)
+anova(fitSimple, fitSimpleQsec, fitComplex)
+```
+
+## Appendix 5. Model Residuals
+
+```{r, fig.height=5, echo=FALSE}
+par(mfrow=c(2,2))
+plot(fitSimpleQsec)
+par(mfrow=c(1,1))
+```
